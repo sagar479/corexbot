@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="https://logowik.com/content/uploads/images/colored-letter-c7662.logowik.com.webp" type="image/x-icon">
   <title>CoreX ChatBot</title>
-
   <style>
     body {
       font-family: 'Arial', sans-serif;
@@ -49,18 +48,20 @@
 
     .message-container {
       display: flex;
-      justify-content: flex-end;
+      flex-direction: column;
+      align-items: flex-start;
       margin-bottom: 10px;
     }
 
     .message {
       max-width: 70%;
       padding: 10px;
-      border-radius: 12px;
+      border-radius: 20px;
       margin: 5px;
       font-size: 16px;
       line-height: 1.4;
       position: relative;
+      overflow-wrap: break-word;
     }
 
     .user-message {
@@ -72,9 +73,9 @@
     .user-message::after {
       content: '';
       position: absolute;
-      bottom: 0;
-      right: -8px;
-      border-width: 8px;
+      bottom: -4px;
+      right: -14px;
+      border-width: 10px;
       border-style: solid;
       border-color: transparent #64b5f6 transparent transparent;
     }
@@ -88,9 +89,9 @@
     .bot-message::after {
       content: '';
       position: absolute;
-      bottom: 0;
-      left: -8px;
-      border-width: 8px;
+      bottom: -4px;
+      left: -14px;
+      border-width: 10px;
       border-style: solid;
       border-color: transparent transparent transparent #81c784;
     }
@@ -107,7 +108,7 @@
       padding: 12px;
       margin-right: 10px;
       border: 1px solid #cccccc;
-      border-radius: 5px;
+      border-radius: 30px;
       transition: border-color 0.3s ease-in-out;
     }
 
@@ -121,7 +122,7 @@
       color: white;
       border: none;
       padding: 12px 20px;
-      border-radius: 5px;
+      border-radius: 30px;
       cursor: pointer;
       transition: background-color 0.3s ease-in-out;
     }
@@ -130,29 +131,51 @@
       background-color: #45a049;
     }
 
-    #loader {
-      display: none;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+    @keyframes slideInFromLeft {
+      0% {
+        transform: translateX(-100%);
+        opacity: 0;
+      }
+      100% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideInFromRight {
+      0% {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      100% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .message {
+      animation-duration: 0.3s;
+      animation-fill-mode: both;
+    }
+
+    .user-message {
+      animation-name: slideInFromRight;
+    }
+
+    .bot-message {
+      animation-name: slideInFromLeft;
     }
   </style>
-
-  
 </head>
 <body>
   <div id="chat-container">
-  <h1>CoreX Chatbot</h1>
-  <div id="chat-history"></div>
-  <form id="chat-form">
-    <input type="text" id="user-input" placeholder="Enter your message">
-    <button type="submit">Send</button>
-  </form>
-</div>
-<div id="loader">
-  <img src="loader.gif" width="150px" alt="Loading...">
-</div>
+    <h1>CoreX Chatbot</h1>
+    <div id="chat-history"></div>
+    <form id="chat-form">
+      <input type="text" id="user-input" placeholder="Enter your message">
+      <button type="submit">Send</button>
+    </form>
+  </div>
   <script>
     const chatHistory = document.getElementById('chat-history');
     const userInput = document.getElementById('user-input');
@@ -161,7 +184,9 @@
     async function sendMessage() {
       const userMessage = userInput.value;
       userInput.value = ''; // Clear input field
-      console.log(userMessage)
+
+      appendMessage(userMessage, 'user');
+
       try {
         const response = await fetch('/chat', {
           method: 'POST',
@@ -172,28 +197,33 @@
         });
 
         const data = await response.json();
-        console.log(data)
         const botMessage = data.response;
-        console.log(botMessage)
-        // Add chat message to the chat history
-        chatHistory.innerHTML += `<div class="user-message">${userMessage}</div>`;
-        chatHistory.innerHTML += `<div class="bot-message">${botMessage}</div>`;
 
-        // Scroll to the bottom of the chat history
+        appendMessage(botMessage, 'bot');
+
+        // Scroll to bottom
         chatHistory.scrollTop = chatHistory.scrollHeight;
       } catch (error) {
         console.error('Error:', error);
-        // Handle errors gracefully, e.g., display an error message to the user
       }
     }
 
-    form.addEventListener('submit', (event) => {
+    function appendMessage(message, sender) {
+      const messageContainer = document.createElement('div');
+      messageContainer.classList.add('message-container');
+
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message', `${sender}-message`);
+      messageElement.innerText = message;
+
+      messageContainer.appendChild(messageElement);
+      chatHistory.appendChild(messageContainer);
+    }
+
+    form.addEventListener('submit', async (event) => {
       event.preventDefault(); // Prevent form submission
-      const loader = document.getElementById('loader');
-      loader.style.display = 'block'; // Show the loader
-      sendMessage().finally(() => {
-      loader.style.display = 'none'; // Hide the loader after the message is sent
-    });;
+
+      await sendMessage();
     });
   </script>
 </body>
